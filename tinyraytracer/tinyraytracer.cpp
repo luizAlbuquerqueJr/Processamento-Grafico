@@ -139,28 +139,8 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
     float deslocX = -((width-1)/2);
     float deslocY = -((height-1)/2);
 
-    /*Vec3f direcao =Vec3f(-20, -2,20).normalize(); //(10,0,-10)
-    Vec3f direcaoPadraoCamera =Vec3f(direcao.x - posCamera.x, direcao.y - posCamera.y,direcao.z - posCamera.z);
+    std::vector<Vec3f> framebuffer(width*height);
 
-    float cosTeta = (direcao.x * direcaoPadraoCamera.x) + (direcao.y * direcaoPadraoCamera.y) + (direcao.z * direcaoPadraoCamera.z);
-    cosTeta /= (pow(pow(direcao.x,2) + pow(direcao.y,2) + pow(direcao.z,2),0.5)* pow(pow(direcaoPadraoCamera.x,2) + pow(direcaoPadraoCamera.y,2) + pow(direcaoPadraoCamera.z,2),0.5));
-    float tgTeta = pow(1-pow(cosTeta,2),0.5)/cosTeta;
-
-    float distancia = 10;
-    */std::vector<Vec3f> framebuffer(width*height);/*
-    //std::cout << "cosTeta: " << cosTeta << '\n';
-    //std::cout << "tgTeta: " << tgTeta << '\n';
-    float incrementoX = 1*direcao.z;
-
-    //std::cout << "pos camera: "<< Vec3f(0,0,0).normalize()<<"\n";
-
-
-
-
-    //std::cout << deslocX << " " << deslocY << '\n';
-
-    // imprime uma string e o resultado da soma entre as variáveis a e b
-       //#pragma omp parallel for*/
     for (size_t j = 0; j<height; j++) { // actual rendering loop
         deslocX = -((width-1)/2);
         for (size_t i = 0; i<width; i++) {
@@ -169,42 +149,6 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
             float dir_y = centroAlcance.y + (eixo.y*deslocX) + (up.y*deslocY);
             float dir_z = centroAlcance.z + (eixo.z*deslocX) + (up.z*deslocY);
 
-            // std::cout << "i: " << i << '\n';
-            // float dir_x =  (i + 0.5)+ 160*direcao.x  -  width/2.;
-            // float dir_y = -(j + 0.5)+30*direcao.y + height/2.;    // this flips the image at the same time
-
-            /*float dir_x = (i)  -  width/2.;
-            float dir_y = -(j + 0.1) + height/2.;    // this flips the image at the same time
-            // float dir_z = -height/(2.*tan(fov/2.)); //gy
-
-            // dir_x += 500. ;
-            // dir_y += 10 ;
-            // dir_y += 5*1000/10 ;
-            float dir_z = -width/(2.*tan(fov/2.)); //gy
-            */
-            // float distancia = 10;
-            // float dir_z = distancia*tan(fov/2.);
-
-            // std::cout << "x,y,z: " << dir_x << "  "<< dir_y << "  " <<dir_z << '\n';
-            // std::cout << "direcao" << Vec3f(dir_x, dir_y, dir_z) << '\n';
-            /*if(i == 0 && j == 0){
-                std::cout << i << " " << j << '\n';
-                std::cout << "final-dir_x: " << dir_x << '\n';
-                std::cout << "final-dir_y: " << dir_y << '\n';
-                std::cout << "final-dir_z: " << dir_z << '\n';
-            }
-            if(i == width/2 && j == height/2){
-                std::cout << i << " " << j << '\n';
-                std::cout << "final-dir_x: " << dir_x << '\n';
-                std::cout << "final-dir_y: " << dir_y << '\n';
-                std::cout << "final-dir_z: " << dir_z << '\n';
-            }
-            if(i == width-1 && j == height-1){
-                std::cout << i << " " << j << '\n';
-                std::cout << "final-dir_x: " << dir_x << '\n';
-                std::cout << "final-dir_y: " << dir_y << '\n';
-                std::cout << "final-dir_z: " << dir_z << '\n';
-            }*/
             framebuffer[i+j*width] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
             //framebuffer[i+j*width] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
             deslocX+=1.;
@@ -234,48 +178,12 @@ int main() {
     Material bBall(1.0, Vec4f(0.6,  0.2, 0.15, 0.0), Vec3f(0.65, 0.86, 0.85), 550.);
     Material cBall(1.0, Vec4f(0.8,  0.05, 0.1, 0.1), Vec3f(0.88, 0.89, 0.8), 250.);
 
-    /*Material      tRedA(1.5, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.8, 0.1, 0.1),   125.);
-    Material      tRedB(1.5, Vec4f(0.3,  0.4, 0.1, 0.4), Vec3f(0.8, 0.1, 0.1),  125.);
-    Material      tRedC(1.5, Vec4f(0.0,  0.5, 0.1, 0.8), Vec3f(0.8, 0.1, 0.1),   125.);
-    Material      tGreen(1.5, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.1, 0.8, 0.1),   125.);
-    Material      tBlue(1.5, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.1, 0.1, 0.8),   125.);*/
-    //Material      ivoryGreen(1.0, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.1, 0.9, 0.1),   50.);
-    //Material      ivoryBlue(1.0, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0.1, 0.1, 0.9),   50.);
-
-    // Material      ivory1(1.0, Vec4f(0.6,  0.3, 0.1, 0.0), Vec3f(0, 0, 1),   50.);
-    //Material      glass(1.5, Vec4f(0.0,  0.5, 0.1, 0.8), Vec3f(0.6, 0.7, 0.8),  125.);
-    //Material red_rubber(1.0, Vec4f(0.9,  0.1, 0.0, 0.0), Vec3f(1, 0.1, 0.1),   0.);
-    // // Material     mirror(1.0, Vec4f(0.0, 10.0, 0.8, 0.0), Vec3f(1.0, 1.0, 1.0), 1425.);
 
     std::vector<Sphere> spheres;
-    // spheres.push_back(Sphere(Vec3f(0,    -2,   -6), 1,      glass));
 
-
-
-
-    // spheres.push_back(Sphere(Vec3f(-3,    0,   -16), 1,      ivory));
-    /*spheres.push_back(Sphere(Vec3f(-2.5, -1, -5), 1, tRedA));
-    spheres.push_back(Sphere(Vec3f(0, -1, -5), 1, tRedB));
-    spheres.push_back(Sphere(Vec3f(2.5, -1, -5), 1, tRedC));
-
-    spheres.push_back(Sphere(Vec3f(0, 0, -7), 0.75, tGreen));
-    spheres.push_back(Sphere(Vec3f(2, -0.5, -7), 0.55, tRedA));
-    spheres.push_back(Sphere(Vec3f(3, -0.1, -9), 1, tBlue));*/
     spheres.push_back(Sphere(Vec3f(-1.5, -2.25, -5), 1.5, aBall));
     spheres.push_back(Sphere(Vec3f(2, -2.5, -6), 1, bBall));
     spheres.push_back(Sphere(Vec3f(3, 0, -4), 1.5, cBall));
-
-    spheres.push_back(Sphere(Vec3f(0, 3, -24), 2, cBall));
-    spheres.push_back(Sphere(Vec3f(2.5, -2, -2), 0.5, aBall));
-    spheres.push_back(Sphere(Vec3f(-8.5, 2, -15), 1.75, bBall));
-    //spheres.push_back(Sphere(Vec3f(-10,    0,   -10), 1,      ivoryRed));
-    //spheres.push_back(Sphere(Vec3f(10,    0,   -5), 1,      ivoryRed));
-    // spheres.push_back(Sphere(Vec3f(-5,    0,   -15), 1,      ivoryRed));
-    //spheres.push_back(Sphere(Vec3f(0,    5,   -10), 1,      ivoryGreen));
-    //spheres.push_back(Sphere(Vec3f(10,    0,   -10), 1,      ivoryBlue));
-    //spheres.push_back(Sphere(Vec3f(10*0.57735026919,    0,   -10), 1,      ivoryBlue));
-    //spheres.push_back(Sphere(Vec3f(0,    -2, -6), 1,      red_rubber));
-    // spheres.push_back(Sphere(Vec3f(3,    3,   -50), 1,      ivoryGreen));
 
     // (x,y,z)
     // ---------->x
@@ -287,20 +195,11 @@ int main() {
 
     ///z entrando
 
-    // spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2,      glass));
-    // spheres.push_back(Sphere(Vec3f( 1.5, -0.5, -18), 3, red_rubber));
-    // spheres.push_back(Sphere(Vec3f( 7,    5,   -18), 3,     mirror));
 
     std::vector<Light>  lights;
-    // lights.push_back(Light(Vec3f(0, 0,  20), 5));
+
     lights.push_back(Light(Vec3f( 10, 50, 0), 3));
     lights.push_back(Light(Vec3f( -10, 0, 10), 1));
-    //lights.push_back(Light(Vec3f( -15, 25, 10), 1.5));
-    // lights.push_back(Light(Vec3f( 0, 20, -5), 6));
-    // lights.push_back(Light(Vec3f( -10, 0, 0), 1));
-    // lights.push_back(Light(Vec3f( 10, 0, 0), 1));
-    // lights.push_back(Light(Vec3f( 10, -5, 0), 3));
-    // lights.push_back(Light(Vec3f( 30, 20,  30), 1.7));
 
     render(spheres, lights);
 
