@@ -88,8 +88,8 @@ Vec3f cast_ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &s
     Material material;
 
     // momento de parada
-    if (depth>16 || !scene_intersect(orig, dir, spheres, point, N, material)) {
-        return Vec3f(0.0, 0.0, 0.0); // background color
+    if (depth>4 || !scene_intersect(orig, dir, spheres, point, N, material)) {
+        return Vec3f(0.01, 0.0, 0.0); // background color
     }
     // std::cout << ":Point"<< point<<"\n" ;
 
@@ -117,8 +117,13 @@ Vec3f cast_ray(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &s
     }
     return material.diffuse_color * diffuse_light_intensity * material.albedo[0] + Vec3f(1., 1., 1.)*specular_light_intensity * material.albedo[1] + reflect_color*material.albedo[2] + refract_color*material.albedo[3];
 }
-
-void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights) {
+Vec3f media(const Vec3f &a, const Vec3f &b, const Vec3f &c, const Vec3f &d){
+    float cR = (a.x+b.x+c.x+d.x)/4;
+    float cG = (a.y+b.y+c.y+d.y)/4;
+    float cB = (a.z+b.z+c.z+d.z)/4;
+    return Vec3f(cR,cG,cB);
+}
+void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights, bool sSampling) {
     const int   width    = 1000;
     const int   height   = 768;
     const float fov      = M_PI/2.;// campo de visao
@@ -127,11 +132,11 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
     std::cout << Vec3f(1,1, -height/(2.*tan(fov/2.))).normalize()<<'\n';
     // 0.57735026919
 
-    Vec3f posCamera = Vec3f(0,-3,0);            //Posição da câmera
+    Vec3f posCamera = Vec3f(0,-2, 2);            //Posição da câmera
     float distLength = 500;                     //distância do alcance da câmera
-    Vec3f direct = Vec3f(0,0,-1).normalize();   //Vetor diretor da câmera
-    Vec3f up = Vec3f(0,-1,0).normalize();       //Vetor Y
-    Vec3f eixo = Vec3f(1,0,0).normalize();      //Vetor X
+    Vec3f direct = Vec3f(0, 0,-1).normalize();   //Vetor diretor da câmera
+    Vec3f up = Vec3f( 0,-1, 0).normalize();       //Vetor Y
+    Vec3f eixo = Vec3f( 1, 0, 0).normalize();      //Vetor X
 
     direct = direct*distLength;                 //Localizar centro do plano de alcance
     Vec3f centroAlcance = direct+posCamera;     //Localizar centro do plano de alcance
@@ -141,23 +146,47 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
 
     std::vector<Vec3f> framebuffer(width*height);
 
-    for (size_t j = 0; j<height; j++) { // actual rendering loop
-        deslocX = -((width-1)/2);
-        for (size_t i = 0; i<width; i++) {
+    if(!sSampling){
+        for (size_t j = 0; j<height; j++) { // actual rendering loop
+            deslocX = -((width-1)/2);
+            for (size_t i = 0; i<width; i++) {
 
-            float dir_x = centroAlcance.x + (eixo.x*deslocX) + (up.x*deslocY);
-            float dir_y = centroAlcance.y + (eixo.y*deslocX) + (up.y*deslocY);
-            float dir_z = centroAlcance.z + (eixo.z*deslocX) + (up.z*deslocY);
+                float dir_x = centroAlcance.x + (eixo.x*deslocX) + (up.x*deslocY);
+                float dir_y = centroAlcance.y + (eixo.y*deslocX) + (up.y*deslocY);
+                float dir_z = centroAlcance.z + (eixo.z*deslocX) + (up.z*deslocY);
 
-            framebuffer[i+j*width] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
-            //framebuffer[i+j*width] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
-            deslocX+=1.;
+                framebuffer[i+j*width] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
+                //framebuffer[i+j*width] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
+                deslocX+=1.;
+            }
+            deslocY+=1.;
         }
-        deslocY+=1.;
+    }else{
+        std::vector<Vec3f> framebufferSS(width*height*4);
+        for (size_t j = 0; j<height*2; j++) { // actual rendering loop
+            deslocX = -((width-1)/2);
+            for (size_t i = 0; i<width*2; i++) {
+
+                float dir_x = centroAlcance.x + (eixo.x*deslocX) + (up.x*deslocY);
+                float dir_y = centroAlcance.y + (eixo.y*deslocX) + (up.y*deslocY);
+                float dir_z = centroAlcance.z + (eixo.z*deslocX) + (up.z*deslocY);
+
+                framebufferSS[i+j*width*2] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
+                //framebuffer[i+j*width] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
+                deslocX+=0.5;
+            }
+            deslocY+=0.5;
+        }
+
+        for(size_t j = 0; j<height; j++){
+            for (size_t i = 0; i<width; i++){
+                framebuffer[i+j*width] = media(framebufferSS[2*i + 4*j*width], framebufferSS[2*i + 4*j*width + 1], framebufferSS[2*i + (2*j+1)*width*2], framebufferSS[2*i + 1+ (2*j+1)*width*2]);
+            }
+        }
     }
 
     std::ofstream ofs; // save the framebuffer to file
-    ofs.open("./reflexaoBrinc.ppm",std::ios::binary);
+    ofs.open("./final-ss2.ppm",std::ios::binary);
     ofs << "P6\n" << width << " " << height << "\n255\n";
 
     for (size_t i = 0; i < height*width; ++i) {
@@ -173,17 +202,16 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
 
 int main() {
 
-    //reflexão
-    Material aBall(1.0, Vec4f(0.9,  0.1, 0.0, 0.0), Vec3f(0.42, 0.81, 0.9), 100.);
-    Material bBall(1.0, Vec4f(0.6,  0.2, 0.15, 0.0), Vec3f(0.65, 0.86, 0.85), 550.);
-    Material cBall(1.0, Vec4f(0.8,  0.05, 0.1, 0.1), Vec3f(0.88, 0.89, 0.8), 250.);
 
+    Material aBall(1.0, Vec4f(0.65,  0.5, 0.1, 0.05), Vec3f(0.8, 0.2, 0.4), 100.);
+	Material bBall(1.0, Vec4f(0.65,  0.5, 0.05, 0.0), Vec3f(0.4, 0.8, 0.2), 100.);
+	Material cBall(1.0, Vec4f(0.45,  10.0, 0.5, 0.0), Vec3f(0.2, 0.4, 0.8), 300.);
 
     std::vector<Sphere> spheres;
 
-    spheres.push_back(Sphere(Vec3f(-1.5, -2.25, -5), 1.5, aBall));
-    spheres.push_back(Sphere(Vec3f(2, -2.5, -6), 1, bBall));
-    spheres.push_back(Sphere(Vec3f(3, 0, -4), 1.5, cBall));
+    spheres.push_back(Sphere(Vec3f(-1.5, -2.5, -3), 1, aBall));
+    spheres.push_back(Sphere(Vec3f(1, -2.5, -5), 0.75, bBall));
+    spheres.push_back(Sphere(Vec3f(2.25, 0, -4), 1.85, cBall));
 
     // (x,y,z)
     // ---------->x
@@ -195,13 +223,13 @@ int main() {
 
     ///z entrando
 
-
     std::vector<Light>  lights;
+    lights.push_back(Light(Vec3f( 10, 50, 0), 1.25));
+	lights.push_back(Light(Vec3f( -10, 0, 10), 1.35));
+	lights.push_back(Light(Vec3f( 0, -100, 0), 1.5));
 
-    lights.push_back(Light(Vec3f( 10, 50, 0), 3));
-    lights.push_back(Light(Vec3f( -10, 0, 10), 1));
-
-    render(spheres, lights);
+    render(spheres, lights, true);  //false para sem SuperSampling
+                                    //true para com SuperSampling
 
     return 0;
 }
