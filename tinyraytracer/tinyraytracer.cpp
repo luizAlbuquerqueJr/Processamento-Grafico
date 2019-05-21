@@ -123,7 +123,7 @@ Vec3f media(const Vec3f &a, const Vec3f &b, const Vec3f &c, const Vec3f &d){
     float cB = (a.z+b.z+c.z+d.z)/4;
     return Vec3f(cR,cG,cB);
 }
-void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights, bool sSampling) {
+void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights, bool sSampling, bool hSampling) {
     const int   width    = 1000;
     const int   height   = 768;
     const float fov      = M_PI/2.;// campo de visao
@@ -161,7 +161,7 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
             }
             deslocY+=1.;
         }
-    }else{
+    }else if(sSampling && !hSampling){
         std::vector<Vec3f> framebufferSS(width*height*4);
         for (size_t j = 0; j<height*2; j++) { // actual rendering loop
             deslocX = -((width-1)/2);
@@ -183,6 +183,34 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
                 framebuffer[i+j*width] = media(framebufferSS[2*i + 4*j*width], framebufferSS[2*i + 4*j*width + 1], framebufferSS[2*i + (2*j+1)*width*2], framebufferSS[2*i + 1+ (2*j+1)*width*2]);
             }
         }
+    }else{
+        std::vector<Vec3f> framebufferSS(width*height*4);
+        std::vector<Vec3f> framebufferHS(width*height*16);
+        for (size_t j = 0; j<height*4; j++) { // actual rendering loop
+            deslocX = -((width-1)/2);
+            for (size_t i = 0; i<width*4; i++) {
+
+                float dir_x = centroAlcance.x + (eixo.x*deslocX) + (up.x*deslocY);
+                float dir_y = centroAlcance.y + (eixo.y*deslocX) + (up.y*deslocY);
+                float dir_z = centroAlcance.z + (eixo.z*deslocX) + (up.z*deslocY);
+
+                framebufferHS[i+j*width*4] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
+                //framebuffer[i+j*width] = cast_ray(posCamera, Vec3f(dir_x, dir_y, dir_z).normalize(), spheres, lights);
+                deslocX+=0.25;
+            }
+            deslocY+=0.25;
+        }
+        for(size_t j = 0; j<height*2; j++){
+            for (size_t i = 0; i<width*2; i++){
+                framebufferSS[i+j*width*2] = media(framebufferHS[2*i + 4*j*width*2], framebufferHS[2*i + 4*j*width*2 + 1], framebufferHS[2*i + (2*j+1)*width*4], framebufferHS[2*i + 1+ (2*j+1)*width*4]);
+            }
+        }
+        for(size_t j = 0; j<height; j++){
+            for (size_t i = 0; i<width; i++){
+                framebuffer[i+j*width] = media(framebufferSS[2*i + 4*j*width], framebufferSS[2*i + 4*j*width + 1], framebufferSS[2*i + (2*j+1)*width*2], framebufferSS[2*i + 1+ (2*j+1)*width*2]);
+            }
+        }
+
     }
 
     std::ofstream ofs; // save the framebuffer to file
@@ -228,7 +256,7 @@ int main() {
 	lights.push_back(Light(Vec3f( -10, 0, 10), 1.35));
 	lights.push_back(Light(Vec3f( 0, -100, 0), 1.5));
 
-    render(spheres, lights, true);  //false para sem SuperSampling
+    render(spheres, lights, true, true);  //false para sem SuperSampling
                                     //true para com SuperSampling
 
     return 0;
